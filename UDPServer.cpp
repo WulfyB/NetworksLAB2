@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 		for (i = 9; 0 < numOfHosts; i++)
 		{
 			std::string host = hostIP[hostTracker];
-			unsigned long hostnum = std::stoi(host);
+			unsigned long hostnum = stoi(host);
 			hostnum = htonl(hostnum);
 			buf[i] = hostnum << 24;
 			i++;
