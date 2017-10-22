@@ -21,10 +21,8 @@
 
 #define MAXBUFLEN 8192
 
-void performOperation(char op, char message[], int messageSize, char response[], int *responseSize);
-void uppercase(char message[], int messageSize);
-int isVowel(char letter);
-
+unsigned char getCheckSum(short );
+std::string fetchHostIP(std::string);
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -36,8 +34,9 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	std::string MYPORT;
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -55,12 +54,20 @@ int main(void)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
 
+	if (argc != 2) {
+		fprintf(stderr, "usage: TCPServerDisplay Port# \n");
+		exit(1);
+	}
+
 	while (1)
 	{
+		MYPORT = argv[1];
 		hasError = 0;
 		checkSumError = 0;
 		lengthError = 0;
 		magicError = 0;
+		short i;
+		int j;
 		if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 			return 1;
@@ -115,7 +122,7 @@ int main(void)
 		}
 		unsigned short byteSum;
 		unsigned int count = 0;
-		for (short i = 0; i < numbytes; i++)
+		for (i = 0; i < numbytes; i++)
 		{
 			if (i = 7)
 			{
@@ -168,7 +175,7 @@ int main(void)
 				errBuf[8] = errBuf[8] | 0x04; //error code, b0 should be 1 indicating no or wrong magic number.
 			}
 			//errBuf[8] should now be all errors from received message
-			for (short i = 0; i < 9; i++)
+			for (i = 0; i < 9; i++)
 			{
 				byteSum += errBuf[i];
 			}
@@ -181,11 +188,12 @@ int main(void)
 			continue; //Moves the program back to start of while loop to wait for next message.
 		}
 		std::string hostIP[256];
-		for (int i = 0; i < recTML; i++)
+		
+		for (i = 0; i < recTML; i++)
 		{
 			unsigned short hostLength = buf[i];
 			std::string hostName = "";
-			for (int j = 0; j < hostLength; j++)
+			for (j = 0; j < hostLength; j++)
 			{
 				hostName += buf[i + j];
 
@@ -214,23 +222,24 @@ int main(void)
 		buf[7] = 0;
 		buf[8] = requestID;
 		int hostTracker = 0;
-		for (int i = 9; 0 < numOfHosts; i++)
+		for (i = 9; 0 < numOfHosts; i++)
 		{
 			std::string host = hostIP[hostTracker];
 			unsigned long hostnum = std::stoi(host);
-			hostnum = htonl(host);
-			buf[i] = host<< 24;
+			hostnum = htonl(hostnum);
+			buf[i] = hostnum << 24;
 			i++;
-			buf[i] = host<< 16;
+			buf[i] = hostnum << 16;
 			i++;
-			buf[i] = host << 8;
+			buf[i] = hostnum << 8;
 			i++;
-			buf[i] = host;
+			buf[i] = hostnum;
 			numOfHosts--;
 		}
 
 		//calculate checksum
-		for (short i = 0; i < TML; i++)
+
+		for (i = 0; i < TML; i++)
 		{
 
 			byteSum += buf[i];
