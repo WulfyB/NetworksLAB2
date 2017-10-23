@@ -4,6 +4,9 @@
 * This version is a modification of the UDPServer created for LAB1
 * While the following changes have been listed here, this list is not
 * to be assumed to be exhaustive.
+* Added logic to check for errors in received packet.
+* Added helper functions getCheckSum and fetchHostIP
+* used bitshifts instead of ntoh/hton methods
 */
 
 #include <stdio.h>
@@ -253,10 +256,24 @@ int main(int argc, char *argv[])
 	}//END OF BIG WHILE
 	return 0;
 }
-std::string fetchHostIP(std::string hostName)
+unsigned long fetchHostIP(std::string hostName)
 {
-
-	return ""; //maybe find int?
+	struct addrinfo hints { 0 };
+	struct addrinfo *result;
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = 0;
+	hints.ai_protocol = 0;          /* Any protocol */
+	unsigned long errCheck, retValue;
+	errCheck = getaddrinfo(hostName, NULL, &hints, &result);
+	if (errCheck != 0)
+	{
+		return 0;
+	}
+	struct sockaddr_in *value = (sockaddr_in*)result;
+	retValue = ntohl(value->sin_addr.s_addr);
+	freeaddrinfo(result);
+	return  retValue;
 }
 
 unsigned char getCheckSum(unsigned short byteSum)
