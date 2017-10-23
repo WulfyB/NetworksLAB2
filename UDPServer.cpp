@@ -112,9 +112,8 @@ int main(int argc, char *argv[])
 
 
 		unsigned long recMagicNumber = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
-		recMagicNumber = ntohl(recMagicNumber);
 		unsigned short recTML = buf[3] << 8 | buf[4];
-		recTML = ntohs(recTML);
+		//Lane, I'm sorry. I love bitshifting.
 		if (numbytes != recTML)
 		{
 			lengthError = 1;
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
 			}
 			byteSum += buf[i];
 		}
-		unsigned char checksum = getCheckSum(byteSum); //Obviously losing data at the moment, need updated to double
+		unsigned char checksum = getCheckSum(byteSum); 
 
 		if (checksum != buf[7])
 		{
@@ -142,7 +141,7 @@ int main(int argc, char *argv[])
 		unsigned int numOfHosts = 0;
 		unsigned long magicNumber = 0x4A6F7921;
 
-		if (magicNumber == recMagicNumber)
+		if (magicNumber != recMagicNumber)
 		{
 			hasError = 1;
 			magicError = 1;
