@@ -36,7 +36,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-	std::string MYPORT = argv[1];
+	char* MYPORT = argv[1];
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
 	int lengthError = 0;
 	int magicError = 0;
 	int checkSumError = 0;
-	memset(&hints, 0, sizeof hints);
+	//memset(&hints, 0, sizeof hints);
+	addrinfo hints { 0 };//replaces commented out line for cpp
 	hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
@@ -158,8 +159,8 @@ int main(int argc, char *argv[])
 			
 			errBuf[4] = TML >> 8;
 			errBuf[5] = TML;
-			errBuf[6] = 0;
-			errBuf[7] = 13; //hardcoded, group ID is 13
+			errBuf[6] = 13; //hardcoded, group ID is 13
+			errBuf[7] = 0; 
 			errBuf[8] = 0;
 			if (lengthError)
 			{
@@ -178,7 +179,7 @@ int main(int argc, char *argv[])
 			{
 				byteSum += errBuf[i];
 			}
-			errBuf[6] = getCheckSum(byteSum);
+			errBuf[7] = getCheckSum(byteSum);
 			if (sendto(sockfd, errBuf, TML, 0, (struct sockaddr *)&their_addr, sizeof(their_addr)) !=
 				TML)
 			{
@@ -186,7 +187,7 @@ int main(int argc, char *argv[])
 			}
 			continue; //Moves the program back to start of while loop to wait for next message.
 		}
-		std::string hostIP[256];
+		std::string hostIP[512];
 		
 		for (i = 9; i < recTML; /*nothing*/)
 		{
