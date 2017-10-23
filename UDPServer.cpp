@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 {
 	char* MYPORT = argv[1];
 	int sockfd;
-	struct addrinfo hints, *servinfo, *p;
+	struct addrinfo hints { 0 }, *servinfo, *p;
 	int rv;
 	short numbytes;
 	struct sockaddr_storage their_addr;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	int magicError = 0;
 	int checkSumError = 0;
 	//memset(&hints, 0, sizeof hints);
-	addrinfo hints { 0 };//replaces commented out line for cpp
+
 	hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
