@@ -21,7 +21,7 @@
 
 #define MAXBUFLEN 8192
 
-unsigned char getCheckSum(short );
+unsigned char getCheckSum(unsigned short );
 std::string fetchHostIP(std::string);
 
 // get sockaddr, IPv4 or IPv6:
