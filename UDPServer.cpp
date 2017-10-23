@@ -265,7 +265,7 @@ unsigned long fetchHostIP(std::string hostName)
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;          /* Any protocol */
 	unsigned long errCheck, retValue;
-	errCheck = getaddrinfo(hostName, NULL, &hints, &result);
+	errCheck = getaddrinfo(hostName.c_str(), NULL, &hints, &result);
 	if (errCheck != 0)
 	{
 		return 0;
