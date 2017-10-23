@@ -25,7 +25,7 @@
 #define MAXBUFLEN 8192
 
 unsigned char getCheckSum(unsigned short );
-std::string fetchHostIP(std::string);
+unsigned long fetchHostIP(std::string);
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 			}
 			continue; //Moves the program back to start of while loop to wait for next message.
 		}
-		std::string hostIP[512];
+		unsigned long hostIP[512];
 		
 		for (i = 9; i < recTML; /*nothing*/)
 		{
@@ -225,8 +225,8 @@ int main(int argc, char *argv[])
 		buf[8] = requestID;
 		for (j = 0, i = 0; j < numOfHosts; j++)
 		{
-			std::string host = hostIP[j];
-			unsigned long hostnum = stoi(host);
+			
+			unsigned long hostnum = hostIP[j];
 			buf[i] = hostnum >> 24;
 			i++;
 			buf[i] = hostnum >> 16;
