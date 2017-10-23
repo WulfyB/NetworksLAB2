@@ -36,7 +36,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-	std::string MYPORT;
+	std::string MYPORT = argv[1];
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
 	hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
-
+	short i;
+	int j;
 	if (argc != 2) {
 		fprintf(stderr, "usage: TCPServerDisplay Port# \n");
 		exit(1);
@@ -61,13 +62,11 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
-		MYPORT = argv[1];
 		hasError = 0;
 		checkSumError = 0;
 		lengthError = 0;
 		magicError = 0;
-		short i;
-		int j;
+		
 		if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 			return 1;
@@ -115,7 +114,7 @@ int main(int argc, char *argv[])
 		unsigned long recMagicNumber = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 		recMagicNumber = ntohl(recMagicNumber);
 		unsigned short recTML = buf[3] << 8 | buf[4];
-		recTML = noths(recTML);
+		recTML = ntohs(recTML);
 		if (numbytes != recTML)
 		{
 			lengthError = 1;
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
 		unsigned int count = 0;
 		for (i = 0; i < numbytes; i++)
 		{
-			if (i = 7)
+			if (i == 7)
 			{
 				continue;
 			}
@@ -151,17 +150,18 @@ int main(int argc, char *argv[])
 		if (hasError)
 		{
 			char errBuf[9];
-			magicNumber = htonl(magicNumber);
-			errBuf[0] = magicNumber << 24;
-			errBuf[1] = magicNumber << 16;
-			errBuf[2] = magicNumber << 8;
+			
+			errBuf[0] = magicNumber >> 24;
+			errBuf[1] = magicNumber >> 16;
+			errBuf[2] = magicNumber >> 8;
 			errBuf[3] = magicNumber;
 			short TML = 9;
-			TML = htons(TML);
-			errBuf[4] = TML << 8;
+			
+			errBuf[4] = TML >> 8;
 			errBuf[5] = TML;
 			errBuf[6] = 0;
 			errBuf[7] = 13; //hardcoded, group ID is 13
+			errBuf[8] = 0;
 			if (lengthError)
 			{
 				errBuf[8] = errBuf[8] | 0x01; //error code, b0 should be 1 indicating length mismatch.
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 			}
 			if (magicError)
 			{
-				errBuf[8] = errBuf[8] | 0x04; //error code, b0 should be 1 indicating no or wrong magic number.
+				errBuf[8] = errBuf[8] | 0x04; //error code, b2 should be 1 indicating no or wrong magic number.
 			}
 			//errBuf[8] should now be all errors from received message
 			for (i = 0; i < 9; i++)
@@ -208,34 +208,32 @@ int main(int argc, char *argv[])
 
 
 		char message[MAXBUFLEN];
-		numOfHosts *= 4; //each host takes 4 bytes
-		unsigned short TML = 9 + numOfHosts;
-		magicNumber = htonl(magicNumber);
-		buf[0] = magicNumber << 24;
-		buf[1] = magicNumber << 16;
-		buf[2] = magicNumber << 8;
+		
+		unsigned short TML = 9 + numOfHosts * 4; //each host takes 4 bytes
+		
+		buf[0] = magicNumber >> 24;
+		buf[1] = magicNumber >> 16;
+		buf[2] = magicNumber >> 8;
 		buf[3] = magicNumber;
-		numOfHosts /= 4;
-		buf[4] = TML << 8;
+		buf[4] = TML >> 8;
 		buf[5] = TML;
 		buf[6] = 13; //Hardcoded
 		buf[7] = 0;
 		buf[8] = requestID;
-		int hostTracker = 0;
-		for (i = 9; 0 < numOfHosts; i++)
+		for (j = 0, i = 0; j < numOfHosts; j++)
 		{
-			std::string host = hostIP[hostTracker];
+			std::string host = hostIP[j];
 			unsigned long hostnum = stoi(host);
-			hostnum = htonl(hostnum);
-			buf[i] = hostnum << 24;
+			buf[i] = hostnum >> 24;
 			i++;
-			buf[i] = hostnum << 16;
+			buf[i] = hostnum >> 16;
 			i++;
-			buf[i] = hostnum << 8;
+			buf[i] = hostnum >> 8;
 			i++;
 			buf[i] = hostnum;
-			numOfHosts--;
+			i++;
 		}
+
 
 		//calculate checksum
 
@@ -261,7 +259,7 @@ std::string fetchHostIP(std::string hostName)
 	return ""; //maybe find int?
 }
 
-unsigned char getCheckSum(short byteSum)
+unsigned char getCheckSum(unsigned short byteSum)
 {
 	unsigned char checksum = 0;
 	while ((byteSum & 0xFF00) > 0) {
