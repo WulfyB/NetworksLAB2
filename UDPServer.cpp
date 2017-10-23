@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
 
 		unsigned long recMagicNumber = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
-		unsigned short recTML = buf[3] << 8 | buf[4];
+		unsigned short recTML = buf[4] << 8 | buf[5];
 		//Lane, I'm sorry. I love bitshifting.
 		if (numbytes != recTML)
 		{
@@ -188,25 +188,25 @@ int main(int argc, char *argv[])
 		}
 		std::string hostIP[256];
 		
-		for (i = 0; i < recTML; i++)
+		for (i = 9; i < recTML; /*nothing*/)
 		{
 			unsigned short hostLength = buf[i];
+			i++;
 			std::string hostName = "";
 			for (j = 0; j < hostLength; j++)
 			{
 				hostName += buf[i + j];
 
 			}
-			numOfHosts++;
+			i += hostLength;
 			//hostname should be constructed
 			//Need to fetch the ip address and add to return message
-			hostIP[i] = fetchHostIP(hostName);
-
+			hostIP[numOfHosts] = fetchHostIP(hostName);
+			numOfHosts++;
 		}
+
 		//Host IP Addresses should now be stored in the hostIP array. Now need to put into buffer
 
-
-		char message[MAXBUFLEN];
 		
 		unsigned short TML = 9 + numOfHosts * 4; //each host takes 4 bytes
 		
