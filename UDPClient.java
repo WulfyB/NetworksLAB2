@@ -58,7 +58,7 @@ public class UDPClient {
          for (int j = 0; j < hostname.length; j++) {
             hostnames[length_index + j + 1] = hostname[j]; 
          }
-         length_index += hostname.length;
+         length_index += hostname.length + 1;
       } 
       
    
@@ -76,12 +76,11 @@ public class UDPClient {
       msg.put(hostnames, 0, TML - 9);
       
       //calculate checksum
-      checksum = (byte) ~client.calculateChecksum(msg); //return 1's complement of checksum
+      checksum = (byte) ~client.calculateChecksum(msg, TML); //return 1's complement of checksum
       byte[] bytesToSend = msg.array();
       bytesToSend[7] = checksum;
    
       try{ //try block for attempting to send and recieve the message
-         //InetAddress serverAddress = InetAddress.getByName(args[0]); // Server name 
       
          String server = args[0]; // Server name 
       
@@ -92,8 +91,7 @@ public class UDPClient {
          SocketAddress address = new InetSocketAddress(server, portNum);
          DatagramSocket socket = channel.socket();
          socket.setSoTimeout(TIMEOUT); 
-	 channel.connect(address);
-         //socket.bind(address);
+	 channel.connect(address); //Not the same as TCP connect. It affectively binds to one server
          
          
          //Make buffer for server response
@@ -108,11 +106,11 @@ public class UDPClient {
             try   
             {
                channel.receive(response); //recieves response from server
-               //response.order(ByteOrder.LITTLE_ENDIAN);
+               System.out.println("Got response");
                response.flip(); 
                int receivedMagicNum = response.getInt();
                if (receivedMagicNum != magicNum) {
-                  System.out.println("Invalid Magic Num - Want: " + magicNum + " Received: " + receivedMagicNum);
+                  //System.out.println("Invalid Magic Num - Want: " + magicNum + " Received: " + receivedMagicNum);
                   tries++; //Invalid (or missing) Magic Number
                   response.clear();
                   continue;
@@ -122,7 +120,7 @@ public class UDPClient {
                if (TML < (9 + 4 * (args.length - 3))) { //TML must be (9 + 4 x #hostnames) bytes long
                   tries++; //Message too short
                   response.clear();
-                  System.out.println("Too Short");
+                 // System.out.println("Too Short");
                   continue;
                }
                
@@ -130,15 +128,12 @@ public class UDPClient {
 	       byte[] responseBytes = response.array();
                int returnedChecksum = (int) responseBytes[7] & 0xFF;
                responseBytes[7] = 0;
-               int newChecksum = (int) client.calculateChecksum(response) & 0xFF;
-
-               System.out.println("Checksum: " + newChecksum);
-	       System.out.println("Returned Checksum: " + returnedChecksum);
-               int checksumResult = newChecksum + returnedChecksum; 
+               int sum = (int) client.calculateChecksum(response, TML) & 0xFF;
+               int checksumResult = sum + returnedChecksum; 
                if (checksumResult != 0xFF ) {
                   tries++; //invalid checksum
                   response.clear();
-                  System.out.println("Bad Checksum");
+                  //System.out.println("Bad Checksum");
                   continue;
                }
 
@@ -162,7 +157,8 @@ public class UDPClient {
          } 
          else 
             System.out.println("No valid response after 7 tries -- giving up."); 
-         socket.close(); 
+         socket.close();
+         channel.close(); 
       
       }
       catch (UnknownHostException uhe)
@@ -170,24 +166,24 @@ public class UDPClient {
          System.err.println("Failed to find host.");
          return;
       }
-      //catch (SocketException se)
-     // {
-       //  System.err.println("Failed to create socket.");
-        // return;
-     // }  
+      catch (SocketException se)
+      {
+        System.err.println("Failed to create socket.");
+        return;
+      }  
    }     
    
-   public byte calculateChecksum(ByteBuffer buf) {
+   public byte calculateChecksum(ByteBuffer buf, int TML) {
       byte checksum = 0;
-      short checksum_short = 0;  
-      for(byte b : buf.array()) {
-        // System.out.println("Byte value: " + (b & 0xFF));
-         checksum_short += (short)(b & 0xFF);
+      short checksum_short = 0; 
+      byte[] buffer = buf.array(); 
+      for(int i = 0; i < TML; i++) {
+         checksum_short += (short)(buffer[i] & 0xFF);
       }
-      //System.out.println("Short: " + (checksum_short));
+      
       while ((checksum_short & 0xFF00) > 0) {
-         byte leftHalf = (byte) (checksum_short >> 8);
-         byte rightHalf = (byte) checksum_short;
+         int leftHalf = (checksum_short >> 8) & 0xFF;
+         int rightHalf = checksum_short & 0xFF;
          checksum_short = (short) (leftHalf + rightHalf);
       }
             
@@ -195,15 +191,7 @@ public class UDPClient {
       return checksum;
    }
    
-   public String getIPString(int ip) {
-      /*String ipStr = 
-         String.format("%d.%d.%d.%d",
-         (ip & 0xff),   
-         (ip >> 8 & 0xff),             
-         (ip >> 16 & 0xff),    
-         (ip >> 24 & 0xff));
-        */
-
+   public String getIPString(int ip) { 
          String ipStr = 
          String.format("%d.%d.%d.%d",
          (ip >> 24 & 0xFF),   
@@ -212,18 +200,6 @@ public class UDPClient {
          (ip & 0xff));
         
       return  ipStr;
-   }
- 
- 
-   public byte checkSumTest() {
-      byte checksum = 0;
-      byte[] thing = {(byte)255, (byte) 1};
-      ByteBuffer buf = ByteBuffer.wrap(thing);
-      
-      checksum = calculateChecksum(buf);
-      
-      return checksum;
-   }
-   
+   } 
 }
 
