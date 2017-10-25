@@ -110,7 +110,7 @@ public class UDPClient {
                response.flip(); 
                int receivedMagicNum = response.getInt();
                if (receivedMagicNum != magicNum) {
-                  //System.out.println("Invalid Magic Num - Want: " + magicNum + " Received: " + receivedMagicNum);
+                  System.out.println("Invalid Magic Num - Want: " + magicNum + " Received: " + receivedMagicNum);
                   tries++; //Invalid (or missing) Magic Number
                   response.clear();
                   continue;
@@ -120,20 +120,24 @@ public class UDPClient {
                if (TML < (9 + 4 * (args.length - 3))) { //TML must be (9 + 4 x #hostnames) bytes long
                   tries++; //Message too short
                   response.clear();
-                 // System.out.println("Too Short");
+                  System.out.println("Too Short");
                   continue;
                }
                
                //Lastly, check the checksum
 	       byte[] responseBytes = response.array();
-               int returnedChecksum = (int) responseBytes[7] & 0xFF;
-               responseBytes[7] = 0;
+               int returnedChecksum = responseBytes[7] & 0xFF;
+               System.out.println("Returned checksum: " + returnedChecksum);
+	       responseBytes[7] = 0;
                int sum = (int) client.calculateChecksum(response, TML) & 0xFF;
-               int checksumResult = sum + returnedChecksum; 
-               if (checksumResult != 0xFF ) {
+	       System.out.println("Calculated sum: " + sum);
+               int checksumResult = sum + returnedChecksum;
+	       System.out.println("checksumResult: " + checksumResult);
+               
+	       if (checksumResult != 0xFF ) {
                   tries++; //invalid checksum
                   response.clear();
-                  //System.out.println("Bad Checksum");
+                  System.out.println("Bad Checksum");
                   continue;
                }
 
@@ -180,7 +184,7 @@ public class UDPClient {
       for(int i = 0; i < TML; i++) {
          checksum_short += (short)(buffer[i] & 0xFF);
       }
-      
+     System.out.println("Checksum sum: " + checksum_short); 
       while ((checksum_short & 0xFF00) > 0) {
          int leftHalf = (checksum_short >> 8) & 0xFF;
          int rightHalf = checksum_short & 0xFF;

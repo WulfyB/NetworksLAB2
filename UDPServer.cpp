@@ -19,8 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
-//#define MYPORT "10023"	// the port users will be connecting to
+#include <iostream>
 
 #define MAXBUFLEN 8192
 
@@ -45,7 +44,7 @@ int main(int argc, char *argv[])
 	int rv;
 	short numbytes;
 	struct sockaddr_storage their_addr;
-	char buf[MAXBUFLEN];
+	unsigned char buf[MAXBUFLEN];
 	socklen_t addr_len;
 	char s[INET6_ADDRSTRLEN];
 	int hasError = 0;
@@ -63,6 +62,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "usage: TCPServerDisplay Port# \n");
 		exit(1);
 	}
+	
 
 	while (1)
 	{
@@ -117,13 +117,17 @@ int main(int argc, char *argv[])
 
 		unsigned long recMagicNumber = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 		unsigned short recTML = buf[4] << 8 | buf[5];
+                printf("Received Magic Number: %d\n", recMagicNumber);
+		printf("Received TML: %d\n", recTML);
+		
 		//Lane, I'm sorry. I love bitshifting.
 		if (numbytes != recTML)
 		{
 			lengthError = 1;
 		}
-		unsigned short byteSum;
-		unsigned int count = 0;
+		printf("Length error: %d\n", lengthError);
+		unsigned short byteSum = 0;
+		//unsigned int count = 0;
 		for (i = 0; i < numbytes; i++)
 		{
 			if (i == 7)
@@ -134,23 +138,30 @@ int main(int argc, char *argv[])
 		}
 		unsigned char checksum = getCheckSum(byteSum); 
 
-		if (checksum != buf[7])
-		{
-			hasError = 1;
-			checkSumError = 1;
-		}
 		unsigned char recGID = buf[6];
 		unsigned char recCSum = buf[7];
 		unsigned char requestID = buf[8];
 		unsigned int numOfHosts = 0;
 		unsigned long magicNumber = 0x4A6F7921;
-
+		//printf("byteSum: %d\n", byteSum);
+	        //printf("checksum: %d\n", checksum);
+                //printf("Received Checksum: %d\n", recCSum);
+		//exit(1);	
+		if (checksum + recCSum != 0xFF)
+		{
+			hasError = 1;
+			checkSumError = 1;
+		}
+		printf("checkSumError: %d\n", checkSumError);
+		
 		if (magicNumber != recMagicNumber)
 		{
 			hasError = 1;
 			magicError = 1;
 		}
-		if (hasError)
+
+                printf("magicError: %d\n", magicError);
+		if (1)
 		{
 			char errBuf[9];
 			
@@ -178,16 +189,18 @@ int main(int argc, char *argv[])
 				errBuf[8] = errBuf[8] | 0x04; //error code, b2 should be 1 indicating no or wrong magic number.
 			}
 			//errBuf[8] should now be all errors from received message
+			byteSum = 0;
 			for (i = 0; i < 9; i++)
 			{
 				byteSum += errBuf[i];
 			}
-			errBuf[7] = getCheckSum(byteSum);
+			errBuf[7] = ~getCheckSum(byteSum); //~ performs 1's complement
 			if (sendto(sockfd, errBuf, TML, 0, (struct sockaddr *)&their_addr, sizeof(their_addr)) !=
 				TML)
 			{
 				perror("Failed to send error for invalid message; resuming listening");
 			}
+			close(sockfd);
 			continue; //Moves the program back to start of while loop to wait for next message.
 		}
 		unsigned long hostIP[512];
@@ -204,16 +217,19 @@ int main(int argc, char *argv[])
 			}
 			i += hostLength;
 			//hostname should be constructed
+			std::cout << "hostname:" << hostName << std::endl;
 			//Need to fetch the ip address and add to return message
 			hostIP[numOfHosts] = fetchHostIP(hostName);
 			numOfHosts++;
 		}
 
+		printf("IP: %lu\n", hostIP[0]);
+
 		//Host IP Addresses should now be stored in the hostIP array. Now need to put into buffer
 
 		
 		unsigned short TML = 9 + numOfHosts * 4; //each host takes 4 bytes
-		
+		printf("TML: %d\n", TML);
 		buf[0] = magicNumber >> 24;
 		buf[1] = magicNumber >> 16;
 		buf[2] = magicNumber >> 8;
@@ -223,7 +239,7 @@ int main(int argc, char *argv[])
 		buf[6] = 13; //Hardcoded
 		buf[7] = 0;
 		buf[8] = requestID;
-		for (j = 0, i = 0; j < numOfHosts; j++)
+		for (j = 0, i = 9; j < numOfHosts; j++)
 		{
 			
 			unsigned long hostnum = hostIP[j];
@@ -231,21 +247,35 @@ int main(int argc, char *argv[])
 			i++;
 			buf[i] = hostnum >> 16;
 			i++;
-			buf[i] = hostnum >> 8;
+			buf[i] = (hostnum >> 8);
 			i++;
 			buf[i] = hostnum;
 			i++;
 		}
-
+		printf("0: %u\n", buf[0]);
+		printf("1: %u\n", buf[1]);
+		printf("2: %u\n", buf[2]);
+		printf("3: %u\n", buf[3]);
+		printf("4: %u\n", buf[4]);
+		printf("5: %u\n", buf[5]);
+		printf("6: %u\n", buf[6]);
+		printf("7: %u\n", buf[7]);
+		printf("8: %u\n", buf[8]);
+		printf("9: %u\n", buf[9]);
+		printf("10: %u\n", buf[10]);
+		printf("11: %u\n", buf[11]);
+		printf("12: %u\n", buf[12]);
 
 		//calculate checksum
-
+		byteSum = 0;
 		for (i = 0; i < TML; i++)
-		{
-
+		{ 
 			byteSum += buf[i];
 		}
-		buf[7] = getCheckSum(byteSum);
+		printf("Bytesum: %d\n", byteSum);
+		printf("Sum: %d\n", getCheckSum(byteSum));
+		buf[7] = ~getCheckSum(byteSum); //~ performs 1's complement
+
 		if (sendto(sockfd, buf, TML, 0, (struct sockaddr *)&their_addr, sizeof(their_addr)) !=
 			TML)
 		{
@@ -270,7 +300,7 @@ unsigned long fetchHostIP(std::string hostName)
 	{
 		return 0;
 	}
-	struct sockaddr_in *value = (sockaddr_in*)result;
+	struct sockaddr_in *value = (sockaddr_in*)result->ai_addr;
 	retValue = ntohl(value->sin_addr.s_addr);
 	freeaddrinfo(result);
 	return  retValue;
@@ -280,8 +310,8 @@ unsigned char getCheckSum(unsigned short byteSum)
 {
 	unsigned char checksum = 0;
 	while ((byteSum & 0xFF00) > 0) {
-		unsigned char leftHalf = (char)(byteSum >> 8);
-		unsigned char rightHalf = (char)byteSum;
+		unsigned char leftHalf = (unsigned char)(byteSum >> 8);
+		unsigned char rightHalf = (unsigned char) byteSum;
 		byteSum = (short)(leftHalf + rightHalf);
 
 	}
