@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 		}
 
                 printf("magicError: %d\n", magicError);
-		if (1)
+		if (hasError)
 		{
 			char errBuf[9];
 			
