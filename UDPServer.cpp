@@ -231,14 +231,28 @@ int main(int argc, char *argv[])
 		{
 			
 			unsigned long hostnum = hostIP[j];
-			buf[i] = hostnum >> 24;
-			i++;
-			buf[i] = hostnum >> 16;
-			i++;
-			buf[i] = (hostnum >> 8);
-			i++;
-			buf[i] = hostnum;
-			i++;
+			if (hostnum != 0)
+			{
+				buf[i] = hostnum >> 24;
+				i++;
+				buf[i] = hostnum >> 16;
+				i++;
+				buf[i] = (hostnum >> 8);
+				i++;
+				buf[i] = hostnum;
+				i++;
+			}
+			else
+			{
+				buf[i] = 255;
+				i++;
+				buf[i] = 255;
+				i++;
+				buf[i] = 255;
+				i++;
+				buf[i] = 255;
+				i++;
+			}
 		}
 
 		//calculate checksum
