@@ -91,7 +91,7 @@ public class UDPClient {
          SocketAddress address = new InetSocketAddress(server, portNum);
          DatagramSocket socket = channel.socket();
          socket.setSoTimeout(TIMEOUT); 
-	 channel.connect(address); //Not the same as TCP connect. It affectively binds to one server
+         channel.connect(address); //Not the same as TCP connect. It affectively binds to one server
          
          
          //Make buffer for server response
@@ -123,18 +123,18 @@ public class UDPClient {
                }
                
                //Lastly, check the checksum
-	       byte[] responseBytes = response.array();
+               byte[] responseBytes = response.array();
                int returnedChecksum = responseBytes[7] & 0xFF;
-	       responseBytes[7] = 0;
+               responseBytes[7] = 0;
                int sum = (int) client.calculateChecksum(response, TML) & 0xFF;
                int checksumResult = sum + returnedChecksum;
                
-	       if (checksumResult != 0xFF ) {
+               if (checksumResult != 0xFF ) {
                   tries++; //invalid checksum
                   response.clear();
                   continue;
                }
-
+            
                receivedResponse = true;
             } 
             catch (SocketTimeoutException ste) 
@@ -152,7 +152,7 @@ public class UDPClient {
                int ip = response.getInt();
                if(ip != Integer.MAX_VALUE)
                {
-               System.out.println("Hostname: " + args[i] + " IP address: " + client.getIPString(ip));
+                  System.out.println("Hostname: " + args[i] + " IP address: " + client.getIPString(ip));
                }
                else
                {
@@ -173,8 +173,8 @@ public class UDPClient {
       }
       catch (SocketException se)
       {
-        System.err.println("Failed to create socket.");
-        return;
+         System.err.println("Failed to create socket.");
+         return;
       }  
    }     
    
@@ -197,7 +197,7 @@ public class UDPClient {
    }
    
    public String getIPString(int ip) { 
-         String ipStr = 
+      String ipStr = 
          String.format("%d.%d.%d.%d",
          (ip >> 24 & 0xFF),   
          (ip >> 16 & 0xFF),             
