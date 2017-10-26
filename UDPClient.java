@@ -116,8 +116,8 @@ public class UDPClient {
                }
                
                TML = response.getShort();
-               if (TML < (9 + 4 * (args.length - 3))) { //TML must be (9 + 4 x #hostnames) bytes long
-                  tries++; //Message too short
+               if (TML != (9 + 4 * (args.length - 3))) { //TML must be (9 + 4 x #hostnames) bytes longa
+		  tries++; //Message too short
                   response.clear();
                   continue;
                }
