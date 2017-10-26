@@ -150,7 +150,7 @@ public class UDPClient {
             
             for (int i = 3; i < args.length; i++) {
                int ip = response.getInt();
-               if(ip != Integer.MAX_VALUE)
+               if(ip != -1)
                {
                   System.out.println("Hostname: " + args[i] + " IP address: " + client.getIPString(ip));
                }
